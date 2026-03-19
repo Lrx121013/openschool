@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>七六班 · 图书角</title>
+    <!-- Material Icons & Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f5f3f0;
+            color: #1f1f1f;
+            overflow-x: hidden;
+            height: 100vh;
+        }
+        :root {
+            --md-primary: #006a6a;
+            --md-on-primary: #ffffff;
+            --md-primary-container: #6ff7f7;
+            --md-on-primary-container: #002020;
+            --md-secondary: #4e5e5e;
+            --md-on-secondary: #ffffff;
+            --md-background: #f5f3f0;
+            --md-surface: #fffcf8;
+            --md-on-surface: #1f1f1f;
+            --md-surface-variant: #e1e3e0;
+            --md-on-surface-variant: #444746;
+            --md-outline: #747775;
+            --md-error: #b3261e;
+            --md-on-error: #ffffff;
+            --md-elevation-1: 0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --md-elevation-2: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+            --md-elevation-3: 0 8px 16px rgba(0,0,0,0.14), 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #app {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--md-background);
+        }
+        .view-stack {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--md-background);
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 20px;
+        }
+        .view.hidden {
+            transform: translateX(100%);
+            pointer-events: none;
+        }
+        .view.current {
+            transform: translateX(0);
+        }
+
+        .app-bar {
+            position: sticky;
+            top: 0;
+            background: var(--md-surface);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--md-elevation-1);
+            z-index: 10;
+            backdrop-filter: blur(8px);
+            background: rgba(255,252,248,0.9);
+            margin-bottom: 8px;
+        }
+        .app-bar .back-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--md-on-surface-variant);
+        }
+        .app-bar .back-btn:hover { background: rgba(0,0,0,0.05); }
+        .app-bar .title { font-size: 1.25rem; font-weight: 500; color: var(--md-on-surface); }
+
+        .card {
+            background: var(--md-surface);
+            border-radius: 24px;
+            padding: 20px;
+            margin: 16px;
+            box-shadow: var(--md-elevation-1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            background: var(--md-surface);
+            color: var(--md-on-surface);
+            box-shadow: var(--md-elevation-1);
+        }
+        .btn-primary {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            box-shadow: var(--md-elevation-2);
+        }
+        .btn-primary:hover { background: #005757; }
+        .btn-danger {
+            background: var(--md-error);
+            color: var(--md-on-error);
+        }
+        .btn-outline {
+            background: transparent;
+            box-shadow: none;
+            border: 1px solid var(--md-outline);
+        }
+
+        .text-field {
+            position: relative;
+            margin: 16px 16px 24px;
+        }
+        .text-field input, .text-field textarea, .text-field select {
+            width: 100%;
+            padding: 16px 16px 8px;
+            font-size: 1rem;
+            border: 1px solid var(--md-outline);
+            border-radius: 12px;
+            background: transparent;
+            outline: none;
+            transition: border 0.2s;
+            color: var(--md-on-surface);
+        }
+        .text-field select {
+            padding: 16px 16px 8px;
+            appearance: none;
+        }
+        .text-field input:focus, .text-field textarea:focus, .text-field select:focus {
+            border: 2px solid var(--md-primary);
+            padding: 15px 15px 7px;
+        }
+        .text-field label {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            font-size: 1rem;
+            color: var(--md-on-surface-variant);
+            pointer-events: none;
+            transition: 0.2s;
+            background: var(--md-surface);
+            padding: 0 4px;
+        }
+        .text-field input:focus ~ label,
+        .text-field input:not(:placeholder-shown) ~ label,
+        .text-field textarea:focus ~ label,
+        .text-field textarea:not(:placeholder-shown) ~ label,
+        .text-field select:focus ~ label,
+        .text-field select:not([value=""]) ~ label {
+            transform: translateY(-22px) scale(0.75);
+            color: var(--md-primary);
+        }
+
+        .checkbox {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .checkbox input { display: none; }
+        .checkbox .checkmark {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--md-outline);
+            border-radius: 4px;
+            position: relative;
+            transition: 0.2s;
+        }
+        .checkbox input:checked + .checkmark {
+            background: var(--md-primary);
+            border-color: var(--md-primary);
+        }
+        .checkbox input:checked + .checkmark::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 1px;
+            width: 6px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            padding: 16px;
+        }
+        .book-card {
+            background: var(--md-surface);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--md-elevation-1);
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .book-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--md-elevation-3);
+        }
+        .book-card .cover {
+            height: 140px;
+            background: #e1e3e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #444746;
+            font-size: 12px;
+            position: relative;
+        }
+        .book-card .cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .book-card .info {
+            padding: 12px;
+        }
+        .book-card .title {
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .book-card .sub {
+            font-size: 0.8rem;
+            color: var(--md-on-surface-variant);
+        }
+        .book-card .badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--md-primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+        }
+
+        .keyboard {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--md-surface);
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+            padding: 16px 8px;
+            border-radius: 28px 28px 0 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+        .keyboard.active { transform: translateY(0); }
+        .key-btn {
+            background: #f0f0f0;
+            border: none;
+            border-radius: 40px;
+            padding: 20px 0;
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--md-on-surface);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .key-btn:active { background: #ddd; }
+        .key-btn.backspace { font-size: 1.2rem; background: #e0e0e0; }
+        .keyboard-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            display: none;
+            z-index: 99;
+        }
+        .keyboard-overlay.active { display: block; }
+
+        .history-item {
+            background: var(--md-surface);
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--md-elevation-1);
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-returned { background: #e1f5fe; color: #01579b; }
+        .status-pending { background: #ffecb3; color: #7d4e00; }
+        .status-overdue { background: #ffcdd2; color: #b71c1c; }
+
+        .stats-card {
+            display: flex;
+            justify-content: space-around;
+            margin: 16px;
+            gap: 12px;
+        }
+        .stat-item {
+            background: var(--md-surface);
+            border-radius: 20px;
+            padding: 16px;
+            flex: 1;
+            text-align: center;
+            box-shadow: var(--md-elevation-1);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--md-primary);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--md-surface);
+            padding: 12px 24px;
+            border-radius: 40px;
+            box-shadow: var(--md-elevation-3);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .toast.show { display: flex; }
+
+        .flex { display: flex; align-items: center; gap: 8px; }
+        .gap-2 { gap: 16px; }
+        .mt-4 { margin-top: 16px; }
+        .mb-4 { margin-bottom: 16px; }
+        .p-4 { padding: 16px; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .hidden { display: none; }
+        .w-full { width: 100%; }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--md-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--md-elevation-1);
+        }
+        .slider-value {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--md-primary);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        .made-by {
+            position: fixed;
+            bottom: 8px;
+            right: 16px;
+            font-size: 12px;
+            color: var(--md-on-surface-variant);
+            opacity: 0.6;
+            z-index: 999;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 视图栈容器 -->
+        <div class="view-stack" id="viewStack">
+            <!-- 首页 -->
+            <div id="homeView" class="view current">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined" style="visibility:hidden;">arrow_back</span>
+                    <span class="title">七六班图书角</span>
+                    <div style="flex:1;"></div>
+                </div>
+                <!-- 统计卡片 -->
+                <div class="stats-card" id="statsContainer"></div>
+                <div class="card text-center">
+                    <span class="material-symbols-outlined" style="font-size: 48px; color: var(--md-primary);">menu_book</span>
+                    <h2 style="margin: 12px 0 8px;">欢迎使用</h2>
+                    <p style="color: var(--md-on-surface-variant);">班级图书借阅系统</p>
+                </div>
+                <div style="padding: 8px 16px; display: grid; gap: 12px;">
+                    <button class="btn btn-primary" onclick="pushView('inPasswordView')"><span class="material-symbols-outlined">add</span> 入库</button>
+                    <button class="btn btn-primary" onclick="pushView('outPasswordView')"><span class="material-symbols-outlined">remove</span> 出库</button>
+                    <button class="btn btn-primary" onclick="pushView('borrowSearchView')"><span class="material-symbols-outlined">search</span> 借阅</button>
+                    <button class="btn btn-primary" onclick="pushView('historyView'); loadHistory();"><span class="material-symbols-outlined">history</span> 借阅历史</button>
+                    <button class="btn btn-primary" onclick="pushView('overdueView'); loadOverdue();"><span class="material-symbols-outlined">warning</span> 逾期管理</button>
+                    <button class="btn btn-outline" onclick="pushView('myBorrowView')"><span class="material-symbols-outlined">person</span> 我的借阅</button>
+                </div>
+            </div>
+
+            <!-- 入库密码验证 -->
+            <div id="inPasswordView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">管理员验证</span>
+                </div>
+                <div class="card">
+                    <p>请输入入库密码</p>
+                    <div class="text-field">
+                        <input type="password" id="inPwdInput" placeholder=" " readonly onfocus="openKeyboard('inPwdInput')">
+                        <label>密码</label>
+                    </div>
+                    <button class="btn btn-primary" onclick="verifyInPassword()">验证</button>
+                </div>
+            </div>
+
+            <!-- 入库表单（带分类和图片预览） -->
+            <div id="inFormView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">新书入库</span>
+                </div>
+                <div class="card">
+                    <div class="text-field">
+                        <input type="text" id="bookName" placeholder=" ">
+                        <label>书名 *</label>
+                    </div>
+                    <div class="text-field">
+                        <input type="text" id="ownerName" placeholder=" ">
+                        <label>所有者 *</label>
+                    </div>
+                    <div class="text-field">
+                        <input type="text" id="ownerStudentId" placeholder=" ">
+                        <label>所有者学号 *</label>
+                    </div>
+                    <div class="text-field">
+                        <input type="text" id="bookNumber" placeholder=" ">
+                        <label>书籍编号 *</label>
+                    </div>
+                    <div class="text-field">
+                        <input type="text" id="category" placeholder=" " value="未分类">
+                        <label>分类</label>
+                    </div>
+                    <div class="text-field">
+                        <input type="file" id="bookImage" accept="image/*" onchange="previewImage()">
+                        <label>书籍图片 (可选)</label>
+                    </div>
+                    <div id="imagePreview" style="text-align: center; margin-bottom: 16px; display:none;">
+                        <img src="" style="max-width: 100px; max-height: 100px; border-radius: 12px;">
+                    </div>
+                    <button class="btn btn-primary" onclick="addBook()">提交入库</button>
+                </div>
+            </div>
+
+            <!-- 出库密码验证 -->
+            <div id="outPasswordView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">管理员验证</span>
+                </div>
+                <div class="card">
+                    <p>请输入出库密码</p>
+                    <div class="text-field">
+                        <input type="password" id="outPwdInput" placeholder=" " readonly onfocus="openKeyboard('outPwdInput')">
+                        <label>密码</label>
+                    </div>
+                    <button class="btn btn-primary" onclick="verifyOutPassword()">验证</button>
+                </div>
+            </div>
+
+            <!-- 出库选择书籍 -->
+            <div id="outListView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">选择出库书籍</span>
+                </div>
+                <div style="padding: 16px; display: flex; justify-content: flex-end;">
+                    <button class="btn btn-danger" onclick="confirmOut()">出库</button>
+                </div>
+                <div id="outBookList" class="book-grid"></div>
+            </div>
+
+            <!-- 借阅搜索 -->
+            <div id="borrowSearchView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">借阅书籍</span>
+                </div>
+                <div class="card">
+                    <div class="text-field">
+                        <input type="text" id="borrowKeyword" placeholder=" " oninput="searchBorrowBooks()">
+                        <label>搜索书名/编号/所有者/学号</label>
+                    </div>
+                </div>
+                <div id="borrowBookList" class="book-grid"></div>
+            </div>
+
+            <!-- 借阅确认 (底部弹出) 增加借阅天数选择 -->
+            <div id="borrowModal" class="keyboard-overlay" style="display:none; background: rgba(0,0,0,0.5); z-index:200;">
+                <div style="position: absolute; bottom:0; left:0; width:100%; background: var(--md-surface); border-radius: 28px 28px 0 0; padding: 24px;">
+                    <h3 style="margin-bottom:16px;">借阅确认</h3>
+                    <div class="text-field">
+                        <input type="text" id="borrowerName" placeholder=" ">
+                        <label>你的姓名</label>
+                    </div>
+                    <div class="text-field">
+                        <input type="text" id="borrowerStudentId" placeholder=" ">
+                        <label>你的学号</label>
+                    </div>
+                    <div class="text-field">
+                        <input type="range" id="borrowDays" class="slider" min="1" max="15" value="7" oninput="updateBorrowDays(this.value)">
+                        <label>借阅天数: <span id="borrowDaysValue">7</span> 天</label>
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top:24px;">
+                        <button class="btn btn-outline" style="flex:1;" onclick="closeBorrowModal()">取消</button>
+                        <button class="btn btn-primary" style="flex:1;" onclick="confirmBorrow()">确认借阅</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 借阅历史（带导出按钮） -->
+            <div id="historyView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">借阅历史</span>
+                    <div style="flex:1;"></div>
+                    <button class="btn btn-outline btn-icon" onclick="exportHistory()" title="导出CSV">
+                        <span class="material-symbols-outlined">download</span>
+                    </button>
+                </div>
+                <div class="card">
+                    <div class="text-field">
+                        <input type="text" id="historyKeyword" placeholder=" " oninput="loadHistory()">
+                        <label>搜索借阅人姓名或学号</label>
+                    </div>
+                </div>
+                <div id="historyList"></div>
+            </div>
+
+            <!-- 逾期管理视图 -->
+            <div id="overdueView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">逾期管理</span>
+                </div>
+                <div id="overdueList" class="p-4"></div>
+            </div>
+
+            <!-- 我的借阅（带续借按钮） -->
+            <div id="myBorrowView" class="view hidden">
+                <div class="app-bar">
+                    <span class="material-symbols-outlined back-btn" onclick="popView()">arrow_back</span>
+                    <span class="title">我的借阅</span>
+                </div>
+                <div class="card">
+                    <p>请输入你的姓名或学号</p>
+                    <div class="text-field">
+                        <input type="text" id="myIdentity" placeholder=" ">
+                        <label>姓名/学号</label>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadMyBorrowings()">查询</button>
+                </div>
+                <div id="myBorrowList"></div>
+            </div>
+
+            <!-- 上传进度条（用于分片上传） -->
+            <div id="uploadProgressModal" class="keyboard-overlay" style="display:none; background: rgba(0,0,0,0.5); z-index:200;">
+                <div style="position: absolute; bottom:0; left:0; width:100%; background: var(--md-surface); border-radius: 28px 28px 0 0; padding: 24px;">
+                    <h3>上传中</h3>
+                    <div style="width:100%; background:#eee; height:8px; border-radius:4px; margin:20px 0;">
+                        <div id="uploadProgressBar" style="width:0%; height:8px; background:var(--md-primary); border-radius:4px;"></div>
+                    </div>
+                    <p id="uploadProgressText">0%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 屏幕数字键盘 -->
+        <div class="keyboard-overlay" id="keyboardOverlay" onclick="closeKeyboard()"></div>
+        <div class="keyboard" id="keyboard">
+            <button class="key-btn" onclick="keyPress('1')">1</button>
+            <button class="key-btn" onclick="keyPress('2')">2</button>
+            <button class="key-btn" onclick="keyPress('3')">3</button>
+            <button class="key-btn" onclick="keyPress('4')">4</button>
+            <button class="key-btn" onclick="keyPress('5')">5</button>
+            <button class="key-btn" onclick="keyPress('6')">6</button>
+            <button class="key-btn" onclick="keyPress('7')">7</button>
+            <button class="key-btn" onclick="keyPress('8')">8</button>
+            <button class="key-btn" onclick="keyPress('9')">9</button>
+            <button class="key-btn" onclick="keyPress('清除')">清除</button>
+            <button class="key-btn" onclick="keyPress('0')">0</button>
+            <button class="key-btn backspace" onclick="keyPress('⌫')">⌫</button>
+        </div>
+
+        <!-- Toast 提示 -->
+        <div id="toast" class="toast">
+            <span class="material-symbols-outlined">info</span>
+            <span id="toastMessage"></span>
+        </div>
+
+        <!-- 署名 -->
+        <div class="made-by">made by Lrx</div>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        // 请将以下地址修改为您实际的API地址
+        const API_BASE_URL = 'https://lrxaircast.xo.je/api.php';
+
+        // ==================== 视图导航 ====================
+        const viewStack = [];
+
+        function pushView(viewId) {
+            const current = document.querySelector('.view.current');
+            if (current) {
+                current.classList.remove('current');
+                current.classList.add('hidden');
+            }
+            const next = document.getElementById(viewId);
+            next.classList.remove('hidden');
+            next.classList.add('current');
+            viewStack.push(viewId);
+        }
+
+        function popView() {
+            if (viewStack.length <= 1) return;
+            viewStack.pop();
+            const prevId = viewStack[viewStack.length - 1];
+            const current = document.querySelector('.view.current');
+            current.classList.remove('current');
+            current.classList.add('hidden');
+            const prev = document.getElementById(prevId);
+            prev.classList.remove('hidden');
+            prev.classList.add('current');
+        }
+
+        function goHome() {
+            while (viewStack.length > 1) popView();
+        }
+
+        // ==================== Toast ====================
+        function showToast(msg, icon = 'info') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ==================== 键盘 ====================
+        let activeInput = null;
+        function openKeyboard(inputId) {
+            activeInput = document.getElementById(inputId);
+            document.getElementById('keyboard').classList.add('active');
+            document.getElementById('keyboardOverlay').classList.add('active');
+        }
+        function closeKeyboard() {
+            document.getElementById('keyboard').classList.remove('active');
+            document.getElementById('keyboardOverlay').classList.remove('active');
+            activeInput = null;
+        }
+        function keyPress(key) {
+            if (!activeInput) return;
+            if (key === '⌫') activeInput.value = activeInput.value.slice(0, -1);
+            else if (key === '清除') activeInput.value = '';
+            else activeInput.value += key;
+        }
+
+        // ==================== 统计 ====================
+        async function loadStats() {
+            try {
+                const res = await fetch(API_BASE_URL + '?action=get_stats');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('statsContainer').innerHTML = `
+                        <div class="stat-item"><span class="stat-number">${data.stats.total}</span><br>总藏书</div>
+                        <div class="stat-item"><span class="stat-number">${data.stats.available}</span><br>可借</div>
+                        <div class="stat-item"><span class="stat-number" style="color: ${data.stats.overdue > 0 ? '#b3261e' : 'var(--md-primary)'};">${data.stats.overdue}</span><br>逾期</div>
+                    `;
+                }
+            } catch (e) {
+                showToast('无法连接服务器');
+            }
+        }
+        loadStats();
+
+        // ==================== 入库 ====================
+        function verifyInPassword() {
+            const pwd = document.getElementById('inPwdInput').value;
+            fetch(API_BASE_URL + '?action=verify_password', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({password: pwd})
+            }).then(r => r.json()).then(data => {
+                if (data.success) pushView('inFormView');
+                else showToast('密码错误', 'error');
+            }).catch(() => showToast('请求失败'));
+        }
+
+        function previewImage() {
+            const file = document.getElementById('bookImage').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.style.display = 'block';
+                    preview.querySelector('img').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function uploadImageChunked(file) {
+            const chunkSize = 1024 * 1024;
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            
+            const initRes = await fetch(API_BASE_URL + '?action=chunk_init', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({filename: file.name, total_chunks: totalChunks})
+            });
+            const initData = await initRes.json();
+            if (!initData.success) throw new Error('初始化失败');
+            const uploadId = initData.upload_id;
+
+            document.getElementById('uploadProgressModal').style.display = 'block';
+            const progressBar = document.getElementById('uploadProgressBar');
+            const progressText = document.getElementById('uploadProgressText');
+
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * chunkSize;
+                const end = Math.min(start + chunkSize, file.size);
+                const chunk = file.slice(start, end);
+                const reader = new FileReader();
+                const data = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+                    reader.readAsDataURL(chunk);
+                });
+
+                const uploadRes = await fetch(API_BASE_URL + '?action=chunk_upload', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({upload_id: uploadId, chunk_index: i, data: data})
+                });
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) throw new Error('分片上传失败');
+
+                const percent = Math.round(((i + 1) / totalChunks) * 100);
+                progressBar.style.width = percent + '%';
+                progressText.innerText = percent + '%';
+            }
+
+            const completeRes = await fetch(API_BASE_URL + '?action=chunk_complete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({upload_id: uploadId})
+            });
+            const completeData = await completeRes.json();
+            document.getElementById('uploadProgressModal').style.display = 'none';
+            if (completeData.success) {
+                return completeData.path;
+            } else {
+                throw new Error('合并失败');
+            }
+        }
+
+        async function addBook() {
+            const bookName = document.getElementById('bookName').value.trim();
+            const ownerName = document.getElementById('ownerName').value.trim();
+            const ownerStudentId = document.getElementById('ownerStudentId').value.trim();
+            const bookNumber = document.getElementById('bookNumber').value.trim();
+            const category = document.getElementById('category').value.trim() || '未分类';
+            if (!bookName || !ownerName || !ownerStudentId || !bookNumber) {
+                showToast('请填写所有必填项');
+                return;
+            }
+            let imagePath = '';
+            const fileInput = document.getElementById('bookImage');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                try {
+                    if (file.size > 2 * 1024 * 1024) {
+                        imagePath = await uploadImageChunked(file);
+                    } else {
+                        const reader = new FileReader();
+                        const base64 = await new Promise((resolve) => {
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.readAsDataURL(file);
+                        });
+                        const res = await fetch(API_BASE_URL + '?action=upload_image', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({image: base64})
+                        });
+                        const data = await res.json();
+                        if (data.success) imagePath = data.path;
+                        else showToast('图片上传失败，但书籍将继续保存');
+                    }
+                } catch (e) {
+                    showToast('图片上传失败: ' + e.message);
+                }
+            }
+            submitBook({bookName, ownerName, ownerStudentId, bookNumber, category, image: imagePath});
+        }
+
+        async function submitBook(book) {
+            const payload = {
+                book_name: book.bookName || '',
+                owner_name: book.ownerName || '',
+                owner_student_id: book.ownerStudentId || '',
+                book_number: book.bookNumber || '',
+                category: book.category || '未分类',
+                image: book.image || ''
+            };
+            try {
+                const res = await fetch(API_BASE_URL + '?action=add_book', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('入库成功');
+                    goHome();
+                    loadStats();
+                } else {
+                    showToast(data.error);
+                }
+            } catch (e) {
+                showToast('请求失败');
+            }
+        }
+
+        // ==================== 出库 ====================
+        function verifyOutPassword() {
+            const pwd = document.getElementById('outPwdInput').value;
+            fetch(API_BASE_URL + '?action=verify_password', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({password: pwd})
+            }).then(r => r.json()).then(data => {
+                if (data.success) { pushView('outListView'); loadOutBooks(); }
+                else showToast('密码错误');
+            }).catch(() => showToast('请求失败'));
+        }
+
+        async function loadOutBooks() {
+            try {
+                const res = await fetch(API_BASE_URL + '?action=get_books_in');
+                const data = await res.json();
+                const container = document.getElementById('outBookList');
+                container.innerHTML = data.books.map(b => `
+                    <div class="book-card">
+                        <div class="cover">${b.image ? `<img src="${b.image}">` : '<span class="material-symbols-outlined" style="font-size: 32px; color: #aaa;">image</span>'}</div>
+                        <div class="info">
+                            <div class="title">${b.book_name || '无名'}</div>
+                            <div class="sub">${b.book_number || '无编号'}</div>
+                            <div class="sub">${b.owner_name || '未知'}</div>
+                            <label class="checkbox" style="margin-top:8px;">
+                                <input type="checkbox" value="${b.id}" class="out-check">
+                                <span class="checkmark"></span>
+                                <span>选择</span>
+                            </label>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showToast('加载失败');
+            }
+        }
+
+        function confirmOut() {
+            const checks = document.querySelectorAll('.out-check:checked');
+            const ids = Array.from(checks).map(c => parseInt(c.value));
+            if (ids.length === 0) return showToast('请选择书籍');
+            if (!confirm('确认出库选中的书籍吗？')) return;
+            fetch(API_BASE_URL + '?action=delete_books', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids})
+            }).then(r => r.json()).then(data => {
+                if (data.success) { showToast('出库成功'); goHome(); loadStats(); }
+            }).catch(() => showToast('请求失败'));
+        }
+
+        // ==================== 借阅 ====================
+        async function searchBorrowBooks() {
+            const keyword = document.getElementById('borrowKeyword').value.trim();
+            if (!keyword) { document.getElementById('borrowBookList').innerHTML = ''; return; }
+            try {
+                const res = await fetch(API_BASE_URL + '?action=search_books', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({keyword})
+                });
+                const data = await res.json();
+                const container = document.getElementById('borrowBookList');
+                container.innerHTML = data.books.map(b => `
+                    <div class="book-card" onclick="openBorrowModal(${b.id}, '${b.book_name.replace(/'/g, "\\'")}')">
+                        <div class="cover">${b.image ? `<img src="${b.image}">` : '<span class="material-symbols-outlined" style="font-size: 32px; color: #aaa;">image</span>'}</div>
+                        <div class="info">
+                            <div class="title">${b.book_name || '无名'}</div>
+                            <div class="sub">${b.book_number || '无编号'}</div>
+                            <div class="sub">${b.owner_name || '未知'}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showToast('搜索失败');
+            }
+        }
+
+        let currentBorrowBookId = null;
+        function openBorrowModal(bookId, bookName) {
+            currentBorrowBookId = bookId;
+            document.getElementById('borrowModal').style.display = 'block';
+            document.getElementById('borrowerName').value = '';
+            document.getElementById('borrowerStudentId').value = '';
+            document.getElementById('borrowDays').value = 7;
+            document.getElementById('borrowDaysValue').innerText = 7;
+        }
+        function updateBorrowDays(val) {
+            document.getElementById('borrowDaysValue').innerText = val;
+        }
+        function closeBorrowModal() {
+            document.getElementById('borrowModal').style.display = 'none';
+        }
+        async function confirmBorrow() {
+            const name = document.getElementById('borrowerName').value.trim();
+            const studentId = document.getElementById('borrowerStudentId').value.trim();
+            const borrowDays = parseInt(document.getElementById('borrowDays').value);
+            if (!name || !studentId) { showToast('请填写姓名和学号'); return; }
+            try {
+                const res = await fetch(API_BASE_URL + '?action=borrow_book', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({book_id: currentBorrowBookId, borrower_name: name, borrower_student_id: studentId, borrow_days: borrowDays})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('借阅成功');
+                    closeBorrowModal();
+                    searchBorrowBooks();
+                    loadStats();
+                } else showToast(data.error);
+            } catch (e) {
+                showToast('请求失败');
+            }
+        }
+
+        // ==================== 借阅历史 ====================
+        async function loadHistory() {
+            const keyword = document.getElementById('historyKeyword')?.value.trim() || '';
+            try {
+                const res = await fetch(API_BASE_URL + '?action=get_history', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({keyword})
+                });
+                const data = await res.json();
+                const container = document.getElementById('historyList');
+                const now = new Date();
+                container.innerHTML = data.history.map(h => {
+                    const borrowDate = new Date(h.borrow_time);
+                    const dueDate = new Date(borrowDate.getTime() + h.borrow_days * 86400000);
+                    const isOverdue = !h.return_time && now > dueDate;
+                    return `
+                    <div class="history-item">
+                        <div>
+                            <div><strong>${h.book_name || '无名'}</strong> (${h.book_number || '无编号'})</div>
+                            <div class="sub">借阅人: ${h.borrower_name || ''} (${h.borrower_student_id || ''})</div>
+                            <div class="sub">借阅: ${h.borrow_time} (${h.borrow_days}天)</div>
+                            <div class="sub">应还: ${dueDate.toLocaleDateString()}</div>
+                            <div class="sub">归还: ${h.return_time || '未归还'}</div>
+                        </div>
+                        <span class="status-badge ${h.return_time ? 'status-returned' : (isOverdue ? 'status-overdue' : 'status-pending')}">
+                            ${h.return_time ? '已归还' : (isOverdue ? '逾期' : '未归还')}
+                        </span>
+                    </div>
+                `}).join('');
+            } catch (e) {
+                showToast('加载历史失败');
+            }
+        }
+
+        // ==================== 逾期管理 ====================
+        async function loadOverdue() {
+            try {
+                const res = await fetch(API_BASE_URL + '?action=get_overdue');
+                const data = await res.json();
+                const container = document.getElementById('overdueList');
+                if (data.overdue.length === 0) {
+                    container.innerHTML = '<div class="card">暂无逾期记录</div>';
+                    return;
+                }
+                container.innerHTML = data.overdue.map(o => `
+                    <div class="history-item">
+                        <div>
+                            <div><strong>${o.book_name || '无名'}</strong> (${o.book_number || '无编号'})</div>
+                            <div class="sub">借阅人: ${o.borrower_name || ''} (${o.borrower_student_id || ''})</div>
+                            <div class="sub">借阅: ${o.borrow_time}</div>
+                            <div class="sub">应还: ${o.due_date} (逾期 ${o.overdue_days} 天)</div>
+                        </div>
+                        <button class="btn btn-danger" onclick="forceReturn(${o.id})">强制归还</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showToast('加载逾期失败');
+            }
+        }
+
+        async function forceReturn(recordId) {
+            if (!confirm('强制归还此书？')) return;
+            try {
+                const res = await fetch(API_BASE_URL + '?action=return_book', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({record_id: recordId})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('归还成功');
+                    loadOverdue();
+                    loadStats();
+                } else showToast(data.error);
+            } catch (e) {
+                showToast('请求失败');
+            }
+        }
+
+        // ==================== 我的借阅 ====================
+        async function loadMyBorrowings() {
+            const identity = document.getElementById('myIdentity').value.trim();
+            if (!identity) return showToast('请输入姓名或学号');
+            try {
+                const res = await fetch(API_BASE_URL + '?action=my_borrowings', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({identity})
+                });
+                const data = await res.json();
+                const container = document.getElementById('myBorrowList');
+                if (data.list.length === 0) {
+                    container.innerHTML = '<div class="card">暂无借阅记录</div>';
+                    return;
+                }
+                const now = new Date();
+                container.innerHTML = data.list.map(b => {
+                    const dueDate = new Date(b.due_date);
+                    const isOverdue = now > dueDate;
+                    return `
+                    <div class="history-item">
+                        <div>
+                            <div><strong>${b.book_name || '无名'}</strong> (${b.book_number || '无编号'})</div>
+                            <div class="sub">借阅时间: ${b.borrow_time}</div>
+                            <div class="sub">应还: ${b.due_date} ${isOverdue ? '(逾期)' : ''}</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="btn btn-outline" onclick="returnBook(${b.id})">归还</button>
+                            ${!isOverdue ? `<button class="btn btn-outline" onclick="renewBook(${b.id})">续借</button>` : ''}
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (e) {
+                showToast('加载失败');
+            }
+        }
+
+        async function returnBook(recordId) {
+            if (!confirm('确认归还此书？')) return;
+            try {
+                const res = await fetch(API_BASE_URL + '?action=return_book', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({record_id: recordId})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('归还成功');
+                    loadMyBorrowings();
+                    loadStats();
+                } else showToast(data.error);
+            } catch (e) {
+                showToast('请求失败');
+            }
+        }
+
+        async function renewBook(recordId) {
+            if (!confirm('确认续借7天？')) return;
+            try {
+                const res = await fetch(API_BASE_URL + '?action=renew_book', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({record_id: recordId})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('续借成功');
+                    loadMyBorrowings();
+                } else showToast(data.error);
+            } catch (e) {
+                showToast('请求失败');
+            }
+        }
+
+        // ==================== 导出历史 ====================
+        function exportHistory() {
+            window.location.href = API_BASE_URL + '?action=export_history';
+        }
+
+        // ==================== 初始化 ====================
+        viewStack.push('homeView');
+    </script>
+</body>
+</html>
